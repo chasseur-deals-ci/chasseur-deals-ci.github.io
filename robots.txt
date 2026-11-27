@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /partager.html
+
+Sitemap: https://chasseur-deals-ci.github.io/sitemap.xml

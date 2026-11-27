@@ -1,0 +1,71 @@
+<!doctype html>
+<!-- © 2026 Serge Kedja. Tous droits réservés. -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Partager la story | Chasseur de deals CI</title>
+<meta name="theme-color" content="#0F2A30">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+  body{margin:0;font:17px/1.4 system-ui,sans-serif;background:#0F2A30;color:#F2F5F0;text-align:center}
+  main{max-width:480px;margin:0 auto;padding:16px}
+  img{width:100%;max-width:320px;border-radius:16px;background:#1b4048}
+  button{display:block;width:100%;margin:12px 0;padding:16px;border:0;border-radius:14px;font:700 18px system-ui;background:#FFB000;color:#0F2A30}
+  button.s{background:#F2F5F0}
+  pre{white-space:pre-wrap;text-align:left;background:#1b4048;border-radius:12px;padding:12px;font:15px/1.4 system-ui}
+  #msg{min-height:1.4em;color:#FFB000}
+</style>
+</head>
+<body>
+<main>
+  <h1 style="font-size:22px">Story prête</h1>
+  <img id="im" alt="Story">
+  <button id="share" type="button">Partager (image + légende)</button>
+  <button class="s" id="copy" type="button">Copier la légende</button>
+  <button class="s" id="save" type="button">Enregistrer l'image</button>
+  <p id="msg" role="status"></p>
+  <pre id="cap"></pre>
+  <p><a href="./" style="color:#F2F5F0">Ouvrir la page</a></p>
+</main>
+<script>
+(function () {
+  var t = Date.now(), blob = null, caption = '';
+  var $ = function (i) { return document.getElementById(i); };
+  function say(m) { $('msg').textContent = m; }
+  Promise.all([
+    fetch('data/story.png?t=' + t, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.blob(); }),
+    fetch('data/caption.txt?t=' + t, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.text(); })
+  ]).then(function (a) {
+    blob = a[0]; caption = a[1].trim();
+    $('im').src = URL.createObjectURL(blob);
+    $('cap').textContent = caption;
+  }).catch(function () { say('Story introuvable : réessaie après la prochaine mise à jour.'); });
+
+  $('share').onclick = function () {
+    if (!blob) return say('Chargement en cours…');
+    var f = new File([blob], 'story.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+      navigator.share({ files: [f], text: caption }).catch(function () {});
+    } else if (navigator.share) {
+      navigator.share({ text: caption }).catch(function () {});
+      say('Ce navigateur ne partage pas l’image : utilise « Enregistrer l’image ».');
+    } else {
+      say('Partage non disponible ici : copie la légende et enregistre l’image.');
+    }
+  };
+  $('copy').onclick = function () {
+    if (navigator.clipboard) navigator.clipboard.writeText(caption).then(function () { say('Légende copiée.'); }, function () { say('Copie refusée : sélectionne le texte ci-dessous.'); });
+    else say('Sélectionne le texte ci-dessous.');
+  };
+  $('save').onclick = function () {
+    if (!blob) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'story.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+})();
+</script>
+</body>
+</html>
